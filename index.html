@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toronto Gainz Doge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@400;700&display=swap');
+        
+        body { 
+            background: #000000; 
+            color: #ffffff; 
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden; 
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gainz-glass { 
+            background: #0a0a0a; 
+            border: 2px solid #ff0000; 
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3); 
+            width: 100%;
+            max-width: 600px;
+            height: 95vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .typing::after { content: '...'; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+        
+        ::webkit-scrollbar { width: 4px; }
+        ::webkit-scrollbar-track { background: #000; }
+        ::webkit-scrollbar-thumb { background: #ff0000; border-radius: 10px; }
+        
+        .doge-avatar-frame {
+            width: 80px; 
+            height: 80px;
+            background: #000;
+            border: 3px solid #ff0000;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+            flex-shrink: 0;
+        }
+
+        .doge-avatar-frame img {
+            width: 90%; 
+            height: 90%;
+            object-fit: contain;
+        }
+
+        /* Tự động xuống dòng và giới hạn chiều cao textarea giống Gemini */
+        #chat-input {
+            resize: none;
+            min-height: 56px;
+            max-height: 200px;
+            scrollbar-width: none;
+        }
+        #chat-input::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 640px) {
+            .doge-avatar-frame { width: 60px; height: 60px; }
+            h1 { font-size: 1.25rem !important; }
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-4">
+
+    <audio id="theme-song" src="Toronto.mp3" loop></audio>
+
+    <div class="gainz-glass rounded-3xl overflow-hidden border-t-8 border-red-600">
+        <div class="bg-black p-4 sm:p-6 flex items-center gap-4 sm:gap-6 border-b border-red-900/40">
+            <div class="doge-avatar-frame">
+                <img src="doge_cute.gif" alt="Gainz Doge">
+            </div>
+            <div>
+                <h1 style="font-family: 'Syncopate';" class="text-xl sm:text-2xl font-black tracking-tighter text-red-600 italic leading-none">TORONTO GAINZ DOGE</h1>
+                <p class="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-[0.3em] font-bold mt-2">Master of Fitness • Dating • Lifestyle</p>
+            </div>
+        </div>
+
+        <div id="chat-messages" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 text-[15px] bg-black">
+            <div class="bg-red-950/20 border border-red-900/30 rounded-2xl p-5 text-gray-200 shadow-sm">
+                Yo fam! 🇨🇦 🔱 It's **Toronto Gainz Doge**. Stop being a mid and start lookmaxxing. **What's the mission today?**
+            </div>
+        </div>
+
+        <div class="p-4 bg-black border-t border-red-900/30">
+            <div class="relative flex items-end gap-2 bg-zinc-900 border border-red-900/20 rounded-2xl p-2 focus-within:border-red-600 transition-all">
+                <textarea id="chat-input" rows="1" placeholder="Ask the Master of the 6ix ..." 
+                    class="flex-1 bg-transparent px-4 py-3 text-white placeholder-gray-600 focus:outline-none leading-relaxed"></textarea>
+                
+                <button onclick="sendMessage()" class="bg-red-600 p-3 rounded-xl text-white hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center mb-1">
+                    <i data-lucide="send-horizontal" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-[9px] text-gray-600 text-center mt-2 uppercase tracking-widest">Built for the 6ix • Est 2026</p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const input = document.getElementById("chat-input");
+        const chatBox = document.getElementById("chat-messages");
+        const themeSong = document.getElementById("theme-song");
+        let musicStarted = false;
+
+        // Tự động giãn chiều cao khi gõ (Gemini style)
+        input.addEventListener("input", function() {
+            this.style.height = "auto";
+            this.style.height = (this.scrollHeight) + "px";
+        });
+
+        async function sendMessage() {
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            if (!musicStarted) {
+                themeSong.play().catch(e => console.log("Music blocked"));
+                musicStarted = true;
+            }
+
+            // User Message
+            chatBox.innerHTML += `
+                <div class="flex justify-end">
+                    <div class="bg-red-600 text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] font-bold shadow-lg shadow-red-600/10">
+                        ${msg.replace(/\n/g, '<br>')}
+                    </div>
+                </div>`;
+            
+            input.value = "";
+            input.style.height = "56px"; // Reset height
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const loadingId = "loading-" + Date.now();
+            chatBox.innerHTML += `
+                <div id="${loadingId}" class="flex justify-start">
+                    <div class="bg-zinc-900 border border-red-900/20 p-4 rounded-2xl rounded-tl-none italic text-red-500 font-bold">
+                        Doge is calculating your potential<span class="typing"></span>
+                    </div>
+                </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const res = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+                document.getElementById(loadingId).remove();
+
+                chatBox.innerHTML += `
+                    <div class="flex justify-start">
+                        <div class="bg-zinc-900 border border-red-900/40 p-5 rounded-2xl rounded-tl-none max-w-[85%] text-gray-200 shadow-xl leading-relaxed">
+                            ${data.reply}
+                        </div>
+                    </div>`;
+            } catch (e) {
+                if(document.getElementById(loadingId)) document.getElementById(loadingId).remove();
+                chatBox.innerHTML += `<div class="text-red-600 text-center font-bold text-xs">GAINZ OVERLOAD. TRY AGAIN.</div>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        input.addEventListener("keydown", (e) => { 
+            if (e.key === "Enter" && !e.shiftKey) { 
+                e.preventDefault();
+                sendMessage(); 
+            } 
+        });
+    </script>
+</body>
+</html>
