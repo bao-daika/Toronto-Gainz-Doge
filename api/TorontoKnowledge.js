@@ -17,13 +17,15 @@ export const torontoKnowledge = {
 
     // HỆ THỐNG SO SÁNH "ALPHA METAPHORS" CỰC CĂNG
     alpha_metaphors: {
-        arms_biceps: [
-            "Thick as Scarborough Bluff rock formations",
-            "Heavy as the steel beams of the GO Train tracks",
-            "Solid as the base of the Prince Edward Viaduct",
-            "Vascular as the streetcar map of Downtown",
-            "Triceps harder than the ice at Christie Pits"
-        ],
+        arms_biceps: {
+            primary: "29\" Biceps as thick as the Load-bearing Columns of the CN Tower", // Cấm bỏ cái này
+            alternatives: [
+                "Thick as Scarborough Bluff rock formations",
+                "Heavy as the steel beams of the GO Train tracks",
+                "Solid as the base of the Prince Edward Viaduct",
+                "Vascular as the streetcar map of Downtown"
+            ]
+        },
         legs_quads: [
             "Built like the concrete pillars of the Gardiner Expressway",
             "Stronger than the foundation of the Scotiabank Arena",
