@@ -1,10 +1,11 @@
-import { torontoKnowledge } from './TorontoKnowledge.js'; // Nhớ là dùng ./ nhé sếp
+import { torontoKnowledge } from './TorontoKnowledge.js'; 
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ reply: "Access Denied, Bucktee!" });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    const { message } = req.body;
+    // Nhận thêm imageBase64 từ frontend
+    const { message, imageBase64 } = req.body;
 
     // LẤY GIỜ TORONTO HIỆN TẠI
     const torontoTime = new Date().toLocaleString("en-US", {
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
         minute: 'numeric'
     });
 
-    // MODEL ID FIX CỨNG: gemini-3.1-flash-lite-preview
+    // MODEL ID FIX CỨNG
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
@@ -59,35 +60,57 @@ export default async function handler(req, res) {
         - **MANDATORY**: If the user asks "Is the gym open?", "Is it crowded?", or "Should I go now?", you MUST search/verify on Google the specific gym's operating hours and peak times for today before giving advice.
         - Give specific, real-time advice based on the search (e.g., "The gym closes in 30 mins, hurry up or don't go, bucktee!").
     6. **NO HALLUCINATION**: If you don't know a spot, call the user a "waste yute" and move on.
-    7. **FORMATTING (MINIMALIST):**
+    7. **MULTIMODAL CAPABILITY (NEW)**: If the user provides an image, you MUST analyze it.
+        - If it's Food: Estimate calories and macros like an elite coach. Roast them if it's junk food.
+        - If it's a Gym Photo/Body: "Mog" their progress or give technical form advice.
+    8. **FORMATTING (MINIMALIST):**
         - Only use line breaks if the answer has 2 distinct parts (e.g., Answer + The Hook).
         - No bullet points. No long lists. 
         - Keep it looking like a quick "text message" from a gym bro, not an essay.
+    9. **ANTI-ROBOT VOCABULARY**:
+        - CONTEXTUAL SLANG: Use "Bucktee/Waste yute" mainly when roasting or when user asks something stupid. Use "Fam/Facts/Dun know" when encouraging or coaching. 
+        - DO NOT repeat "Bucktee", "Waste yute", or "Ahlie" in every sentence.
+        - Use the full 'slang_vault' from internal data. Rotate between "Top left", "Dun know", "Modness", "Steezy", etc.
+        - If you used "Ahlie" in the last message, use "Facts" or "Real talk" in this one.
+    10. **METAPHOR DIVERSITY**: 
+        - Mandatory: Rotate metaphors for physical stats using 'alpha_metaphors' from internal data first, then you can invent new Toronto things yourself.
+        - Use other Toronto landmarks (Gardiner, 401, Scarborough Bluffs, Spadina TTC, and more) for variety. Avoid "CN Tower" if it was used in the previous turn.
 
-        GOAL: 
+    GOAL: 
     - **ADDICTIVE ENGAGEMENT**: Make the user addicted to your energy and humour. Every response must trigger a "Dopamine Spike".
     - **THE HOOK**: Always end with a punchy, open-ended "Alpha" question to bait the user into replying and keep the conversation flowing.
-`;
+    `;
+
+    // CẤU TRÚC PAYLOAD HỖ TRỢ CẢ CHỮ VÀ ẢNH (MULTIMODAL)
+    const parts = [{ text: `${systemPrompt}\n\nUser Message: ${message || "Analyzing image..."}` }];
+    
+    if (imageBase64) {
+        parts.push({
+            inline_data: {
+                mime_type: "image/jpeg", // Tự động nhận diện hoặc fix cứng jpeg vì base64 thường bọc được hết
+                data: imageBase64.split(',')[1] // Loại bỏ header 'data:image/xxx;base64,'
+            }
+        });
+    }
+
     const payload = {
-        contents: [{
-            parts: [{ text: `${systemPrompt}\n\nUser Message: ${message}` }]
-        }],
+        contents: [{ parts: parts }],
         generationConfig: {
-            temperature: 0.85, // Tăng nhiệt độ tí cho nó mặn mà, hài hước
+            temperature: 0.85,
             maxOutputTokens: 1000
         }
     };
 
     try {
-        const response = await fetch(url, {
+        let response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        let data = await response.json();
 
-        // Xử lý fallback cho Model 3.1 Flash Preview
+        // Fallback sang Model Preview khác nếu bị lỗi
         if (data.error || !data.candidates) {
             const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${apiKey}`;
             const fbRes = await fetch(fallbackUrl, {
@@ -95,14 +118,10 @@ export default async function handler(req, res) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const fbData = await fbRes.json();
-            const fbReply = fbData.candidates[0].content.parts[0].text;
-            // Format xuống dòng cho fallback
-            return res.status(200).json({ reply: fbReply.replace(/\n/g, '<br>') });
+            data = await fbRes.json();
         }
 
         const aiReply = data.candidates[0].content.parts[0].text;
-        // Format xuống dòng cho reply chính
         return res.status(200).json({ reply: aiReply.replace(/\n/g, '<br>') });
 
     } catch (error) {
