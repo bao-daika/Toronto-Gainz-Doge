@@ -1,4 +1,4 @@
-import { torontoKnowledge } from '../TorontoKnowledge.js'; 
+import { torontoKnowledge } from './TorontoKnowledge.js'; // Nhớ là dùng ./ nhé sếp
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ reply: "Access Denied, Bucktee!" });
